@@ -43,9 +43,13 @@ const SAFETY_SETTINGS = [
   },
 ];
 
+let cachedModel: GenerativeModel | null = null;
+let lastApiKey: string | null = null;
+
 /**
- * Initializes and returns the Gemini generative model.
- * Throws if GEMINI_API_KEY is not set.
+ * Initializes and returns the Gemini generative model using a Singleton pattern.
+ * Caches the initialized model instance across warm serverless/Node.js invocations,
+ * preventing expensive client recreation and connection pool resets.
  */
 function getModel(): GenerativeModel {
   const apiKey = process.env["GEMINI_API_KEY"];
@@ -55,8 +59,14 @@ function getModel(): GenerativeModel {
         "Please add it to your .env.local file."
     );
   }
+
+  // Reuse existing model instance if API key hasn't changed
+  if (cachedModel && lastApiKey === apiKey) {
+    return cachedModel;
+  }
+
   const genAI = new GoogleGenerativeAI(apiKey);
-  return genAI.getGenerativeModel({
+  cachedModel = genAI.getGenerativeModel({
     model: "gemini-2.0-flash",
     safetySettings: SAFETY_SETTINGS,
     generationConfig: {
@@ -66,6 +76,9 @@ function getModel(): GenerativeModel {
       maxOutputTokens: 8192,
     },
   });
+  lastApiKey = apiKey;
+
+  return cachedModel;
 }
 
 /**

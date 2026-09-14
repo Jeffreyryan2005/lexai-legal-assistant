@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
 import { Scale } from "lucide-react";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -61,6 +62,7 @@ export default function RootLayout({
 
         {/* Navigation */}
         <header
+          role="banner"
           className="sticky top-0 z-40 border-b border-slate-100 shadow-sm"
           style={{ backgroundColor: "rgba(255,255,255,0.95)", backdropFilter: "blur(12px)" }}
         >
@@ -103,13 +105,15 @@ export default function RootLayout({
           </nav>
         </header>
 
-        {/* Main content */}
-        <main id="main-content" className="mx-auto max-w-6xl px-4 py-10">
-          {children}
+        {/* Main content with ErrorBoundary and main role */}
+        <main id="main-content" role="main" className="mx-auto max-w-6xl px-4 py-10">
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-slate-100 bg-white mt-20">
+        <footer role="contentinfo" className="border-t border-slate-100 bg-white mt-20">
           <div className="mx-auto max-w-6xl px-4 py-8">
             <div className="flex flex-col items-center gap-3 text-center">
               <div className="flex items-center gap-2">

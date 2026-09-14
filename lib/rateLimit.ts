@@ -25,8 +25,8 @@ const rateLimitStore = new Map<string, RateLimitEntry>();
  */
 function cleanupExpired(): void {
   const now = Date.now();
-  // Only cleanup if we're approaching the limit to avoid unnecessary work
-  if (rateLimitStore.size < MAX_TRACKED_IPS * 0.9) return;
+  // Clean up proactively if the store has more than 50 entries
+  if (rateLimitStore.size < 50) return;
 
   for (const [ip, entry] of rateLimitStore.entries()) {
     if (entry.resetAt <= now) {

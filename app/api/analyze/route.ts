@@ -17,6 +17,7 @@ import { generateContent, truncateToTokenLimit } from "@/lib/gemini";
 import { validateFileMetadata, parseGeminiJson, createErrorResponse, validateMagicBytes, sanitizeFileName } from "@/lib/validators";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { logger } from "@/lib/logger";
+import { EfficientCache, analysisCache } from "@/lib/cache";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -74,6 +75,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // 5. Extract text from file
+    const startTime = performance.now();
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
@@ -91,7 +93,37 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
+    // 5c. High-performance cache lookup via deterministic SHA-256 document hash
+    const documentHash = EfficientCache.hash(buffer);
+    const cachedAnalysis = analysisCache.get(documentHash);
+    if (cachedAnalysis) {
+      const hitDuration = Math.round(performance.now() - startTime);
+      return NextResponse.json(
+        {
+          success: true,
+          analysis: cachedAnalysis,
+          metadata: {
+            fileName: safeFileName,
+            fileSize: file.size,
+            cached: true,
+            processingTime: new Date().toISOString(),
+          },
+        },
+        {
+          headers: {
+            "X-Cache": "HIT",
+            "Server-Timing": `cache;dur=${hitDuration};desc="LRU Memory Cache Hit"`,
+            "X-Response-Time": `${hitDuration}ms`,
+            "Cache-Control": "private, max-age=3600",
+            "X-Content-Type-Options": "nosniff",
+          },
+        }
+      );
+    }
+
+    const extractStartTime = performance.now();
     const extraction = await extractTextFromFile(buffer, file.type, safeFileName);
+    const extractDuration = Math.round(performance.now() - extractStartTime);
 
     if (!extraction.text || extraction.text.trim().length < 50) {
       return NextResponse.json(
@@ -107,7 +139,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const prompt = `${getAnalysisPrompt()}\n\n--- DOCUMENT START ---\n${truncatedText}\n--- DOCUMENT END ---`;
 
     // 7. Generate analysis with Gemini
+    const aiStartTime = performance.now();
     const rawResponse = await generateContent(prompt);
+    const aiDuration = Math.round(performance.now() - aiStartTime);
 
     // 8. Parse and validate the JSON response
     const analysis = parseGeminiJson(rawResponse);
@@ -118,7 +152,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // 9. Return structured response with metadata
+    // Store in cache for instantaneous repeated requests
+    analysisCache.set(documentHash, analysis);
+    const totalDuration = Math.round(performance.now() - startTime);
+
+    // 9. Return structured response with metadata and efficiency metrics
     return NextResponse.json(
       {
         success: true,
@@ -133,7 +171,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       },
       {
         headers: {
-          "Cache-Control": "no-store, must-revalidate",
+          "X-Cache": "MISS",
+          "Server-Timing": `total;dur=${totalDuration}, extract;dur=${extractDuration}, ai;dur=${aiDuration}`,
+          "X-Response-Time": `${totalDuration}ms`,
+          "Cache-Control": "private, max-age=3600",
           "X-Content-Type-Options": "nosniff",
         },
       }

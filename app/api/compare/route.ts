@@ -13,22 +13,26 @@ import { NextRequest, NextResponse } from "next/server";
 import { extractTextFromFile, isSupportedFileType } from "@/lib/extractText";
 import { getComparisonPrompt } from "@/lib/prompts";
 import { generateContent, truncateToTokenLimit } from "@/lib/gemini";
-import { validateFileMetadata, parseGeminiJson, createErrorResponse } from "@/lib/validators";
+import { validateFileMetadata, parseGeminiJson, createErrorResponse, validateMagicBytes, sanitizeFileName } from "@/lib/validators";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { logger } from "@/lib/logger";
+import { EfficientCache, comparisonCache } from "@/lib/cache";
 
 export const runtime = "nodejs";
 export const maxDuration = 90;
 
 /**
- * Validates and extracts text from a form file entry.
- * Returns error message or extracted text.
+ * Validates and extracts text from a form file entry with magic byte validation.
+ * Returns error message or extracted text and buffer.
  */
 async function processFileEntry(
   formData: FormData,
   fieldName: string,
   label: string
-): Promise<{ text: string; name: string; words: number } | { error: string }> {
+): Promise<
+  | { text: string; name: string; words: number; buffer: Buffer }
+  | { error: string }
+> {
   const file = formData.get(fieldName) as File | null;
   if (!file) {
     return { error: `${label} is required. Please upload a file.` };
@@ -45,8 +49,18 @@ async function processFileEntry(
     };
   }
 
+  const safeFileName = sanitizeFileName(file.name);
   const buffer = Buffer.from(await file.arrayBuffer());
-  const extraction = await extractTextFromFile(buffer, file.type, file.name);
+
+  // Magic byte validation to prevent MIME-spoofing
+  const ext = safeFileName.split(".").pop()?.toLowerCase() ?? "";
+  if (!validateMagicBytes(buffer, ext)) {
+    return {
+      error: `${label}: File content does not match its extension. The file may be corrupted or disguised.`,
+    };
+  }
+
+  const extraction = await extractTextFromFile(buffer, file.type, safeFileName);
 
   if (!extraction.text || extraction.text.trim().length < 50) {
     return {
@@ -56,8 +70,9 @@ async function processFileEntry(
 
   return {
     text: extraction.text,
-    name: file.name,
+    name: safeFileName,
     words: extraction.wordCount,
+    buffer,
   };
 }
 
@@ -76,9 +91,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
+    const startTime = performance.now();
     const formData = await request.formData();
 
-    // 2. Process both files
+    // 2. Process both files concurrently with Promise.all
     const [result1, result2] = await Promise.all([
       processFileEntry(formData, "file1", "Document 1"),
       processFileEntry(formData, "file2", "Document 2"),
@@ -89,6 +105,36 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
     if ("error" in result2) {
       return NextResponse.json(createErrorResponse(result2.error), { status: 400 });
+    }
+
+    // High-performance cache check: hash both documents together
+    const comparisonKey = EfficientCache.hash(
+      Buffer.concat([result1.buffer, result2.buffer])
+    );
+    const cachedComparison = comparisonCache.get(comparisonKey);
+    if (cachedComparison) {
+      const hitDuration = Math.round(performance.now() - startTime);
+      return NextResponse.json(
+        {
+          success: true,
+          comparison: cachedComparison,
+          metadata: {
+            doc1: { name: result1.name, wordCount: result1.words },
+            doc2: { name: result2.name, wordCount: result2.words },
+            cached: true,
+            processingTime: new Date().toISOString(),
+          },
+        },
+        {
+          headers: {
+            "X-Cache": "HIT",
+            "Server-Timing": `cache;dur=${hitDuration};desc="LRU Memory Cache Hit"`,
+            "X-Response-Time": `${hitDuration}ms`,
+            "Cache-Control": "private, max-age=3600",
+            "X-Content-Type-Options": "nosniff",
+          },
+        }
+      );
     }
 
     // 3. Build comparison prompt with both documents
@@ -110,7 +156,9 @@ ${text2}
 --- END ---`;
 
     // 4. Generate comparison
+    const aiStartTime = performance.now();
     const rawResponse = await generateContent(prompt);
+    const aiDuration = Math.round(performance.now() - aiStartTime);
     const comparison = parseGeminiJson(rawResponse);
 
     if (!comparison) {
@@ -120,15 +168,30 @@ ${text2}
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      comparison,
-      metadata: {
-        doc1: { name: result1.name, wordCount: result1.words },
-        doc2: { name: result2.name, wordCount: result2.words },
-        processingTime: new Date().toISOString(),
+    // Store in cache
+    comparisonCache.set(comparisonKey, comparison);
+    const totalDuration = Math.round(performance.now() - startTime);
+
+    return NextResponse.json(
+      {
+        success: true,
+        comparison,
+        metadata: {
+          doc1: { name: result1.name, wordCount: result1.words },
+          doc2: { name: result2.name, wordCount: result2.words },
+          processingTime: new Date().toISOString(),
+        },
       },
-    });
+      {
+        headers: {
+          "X-Cache": "MISS",
+          "Server-Timing": `total;dur=${totalDuration}, ai;dur=${aiDuration}`,
+          "X-Response-Time": `${totalDuration}ms`,
+          "Cache-Control": "private, max-age=3600",
+          "X-Content-Type-Options": "nosniff",
+        },
+      }
+    );
   } catch (error) {
     logger.error("[/api/compare] Unhandled error", {
       message: error instanceof Error ? error.message : String(error),

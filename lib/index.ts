@@ -60,3 +60,12 @@ export {
 
 // Logging
 export { logger } from "./logger";
+
+// High-performance caching
+export {
+  EfficientCache,
+  analysisCache,
+  comparisonCache,
+  type CacheEntry,
+  type CacheStats,
+} from "./cache";

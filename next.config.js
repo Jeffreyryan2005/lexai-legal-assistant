@@ -47,15 +47,27 @@ const nextConfig = {
     ];
   },
 
-  // Efficiency: Enable compression
+  // Efficiency: Enable gzip/brotli compression
   compress: true,
+
+  // Strict mode for detecting side-effects and performance issues
+  reactStrictMode: true,
 
   // Prevent exposing server internals
   poweredByHeader: false,
 
-  // Experimental features for performance
+  // Package import optimization for minimal client bundle size
   experimental: {
-    optimizePackageImports: ["lucide-react", "framer-motion"],
+    optimizePackageImports: [
+      "lucide-react",
+      "framer-motion",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-tabs",
+      "@radix-ui/react-tooltip",
+      "@radix-ui/react-scroll-area",
+      "@radix-ui/react-separator",
+      "@radix-ui/react-progress",
+    ],
   },
 };
 

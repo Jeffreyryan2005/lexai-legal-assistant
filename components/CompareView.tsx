@@ -137,7 +137,7 @@ function DifferenceCard({
 /**
  * Full comparison view component.
  */
-export function CompareView({
+function CompareViewComponent({
   comparison,
   doc1Name,
   doc2Name,
@@ -330,4 +330,5 @@ export function CompareView({
 }
 
 // Memoized — large comparison component only re-renders when comparison data changes
-export default memo(CompareView);
+export const CompareView = memo(CompareViewComponent);
+export default CompareView;

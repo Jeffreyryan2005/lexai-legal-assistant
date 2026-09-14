@@ -27,7 +27,7 @@ interface ClauseCardProps {
 /**
  * Expandable clause card showing clause name, risk level, explanation, and raw text.
  */
-export function ClauseCard({ clause, index }: ClauseCardProps): React.JSX.Element {
+function ClauseCardComponent({ clause, index }: ClauseCardProps): React.JSX.Element {
   const [expanded, setExpanded] = useState(false);
   const colors = riskLevelToColors(clause.riskLevel);
   const cardId = `clause-${index}`;
@@ -153,4 +153,5 @@ export function ClauseCard({ clause, index }: ClauseCardProps): React.JSX.Elemen
 }
 
 // Memoized to prevent re-render when parent analysis panel updates unrelated state
-export default memo(ClauseCard);
+export const ClauseCard = memo(ClauseCardComponent);
+export default ClauseCard;

@@ -77,7 +77,7 @@ function Section({
 /**
  * Full document analysis panel with all insights.
  */
-export function AnalysisPanel({
+function AnalysisPanelComponent({
   analysis,
   fileName,
   wordCount,
@@ -292,4 +292,5 @@ export function AnalysisPanel({
 }
 
 // Memoized — re-renders only when analysis data changes, not on parent state changes
-export default memo(AnalysisPanel);
+export const AnalysisPanel = memo(AnalysisPanelComponent);
+export default AnalysisPanel;

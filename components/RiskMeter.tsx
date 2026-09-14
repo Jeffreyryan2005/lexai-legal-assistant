@@ -46,7 +46,7 @@ function RiskIcon({
  * Animated risk meter component.
  * Shows a visual gauge from 1-10 with color-coded risk assessment.
  */
-export function RiskMeter({
+function RiskMeterComponent({
   score,
   reason,
   compact = false,
@@ -135,4 +135,5 @@ export function RiskMeter({
 }
 
 // Pure component — only re-renders when score, compact, or reason props change
-export default memo(RiskMeter);
+export const RiskMeter = memo(RiskMeterComponent);
+export default RiskMeter;
