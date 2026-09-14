@@ -46,50 +46,55 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en" className="scroll-smooth" style={{ colorScheme: "light" }}>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-slate-50 font-sans`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen font-sans`}
+        style={{ backgroundColor: "#f8fafc", color: "#0f172a" }}
       >
         {/* Skip to main content — accessibility */}
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-lg focus:bg-indigo-600 focus:px-4 focus:py-2 focus:text-white focus:text-sm focus:font-semibold"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-xl focus:bg-indigo-600 focus:px-4 focus:py-2 focus:text-white focus:text-sm focus:font-semibold focus:shadow-lg"
         >
           Skip to main content
         </a>
 
         {/* Navigation */}
-        <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
+        <header
+          className="sticky top-0 z-40 border-b border-slate-100 shadow-sm"
+          style={{ backgroundColor: "rgba(255,255,255,0.95)", backdropFilter: "blur(12px)" }}
+        >
           <nav
-            className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3"
+            className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4"
             aria-label="Main navigation"
           >
             {/* Logo */}
             <Link
               href="/"
-              className="flex items-center gap-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              className="flex items-center gap-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
               aria-label="LexAI Home"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
-                <Scale className="h-4 w-4 text-white" aria-hidden="true" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 shadow-md">
+                <Scale className="h-4.5 w-4.5 text-white" aria-hidden="true" style={{ height: "18px", width: "18px" }} />
               </div>
-              <span className="font-bold text-slate-900 text-lg">
-                Lex<span className="text-indigo-600">AI</span>
+              <span className="font-black text-slate-900 text-xl tracking-tight">
+                Lex<span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">AI</span>
               </span>
             </Link>
 
             {/* Navigation links */}
             <ul className="flex items-center gap-1" role="list">
               {[
-                { href: "/analyze", label: "Analyze" },
-                { href: "/compare", label: "Compare" },
-                { href: "/chat", label: "Chat" },
+                { href: "/analyze", label: "Analyze", emoji: "📄" },
+                { href: "/compare", label: "Compare", emoji: "⚖️" },
+                { href: "/chat", label: "Chat", emoji: "💬" },
               ].map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
+                    <span aria-hidden="true">{item.emoji}</span>
                     {item.label}
                   </Link>
                 </li>
@@ -99,27 +104,29 @@ export default function RootLayout({
         </header>
 
         {/* Main content */}
-        <main id="main-content" className="mx-auto max-w-6xl px-4 py-8">
+        <main id="main-content" className="mx-auto max-w-6xl px-4 py-10">
           {children}
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-slate-200 bg-white mt-16">
-          <div className="mx-auto max-w-6xl px-4 py-6">
-            <div className="flex flex-col items-center gap-2 text-center">
+        <footer className="border-t border-slate-100 bg-white mt-20">
+          <div className="mx-auto max-w-6xl px-4 py-8">
+            <div className="flex flex-col items-center gap-3 text-center">
               <div className="flex items-center gap-2">
-                <Scale className="h-4 w-4 text-indigo-600" aria-hidden="true" />
-                <span className="font-semibold text-slate-800">
-                  Lex<span className="text-indigo-600">AI</span>
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600">
+                  <Scale className="text-white" aria-hidden="true" style={{ height: "14px", width: "14px" }} />
+                </div>
+                <span className="font-black text-slate-900">
+                  Lex<span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">AI</span>
                 </span>
               </div>
-              <p className="text-slate-500 text-xs max-w-lg">
+              <p className="text-slate-400 text-xs max-w-lg leading-relaxed">
                 LexAI provides AI-generated analysis for informational purposes only.
                 This is not legal advice. Always consult a qualified legal professional
                 for advice specific to your situation.
               </p>
-              <p className="text-slate-400 text-xs">
-                © {new Date().getFullYear()} LexAI. Built for PromptWars Virtual Hackathon.
+              <p className="text-slate-300 text-xs">
+                © {new Date().getFullYear()} LexAI — Built for PromptWars Virtual Hackathon
               </p>
             </div>
           </div>
