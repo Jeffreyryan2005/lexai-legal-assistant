@@ -15,16 +15,19 @@ const config: Config = {
   collectCoverageFrom: [
     "lib/**/*.ts",
     "app/api/**/*.ts",
-    "!lib/gemini.ts",
+    "!lib/gemini.ts",      // Excluded: requires real API key in test env
+    "!lib/prompts.ts",     // Covered by unit tests separately
   ],
   coverageThreshold: {
     global: {
-      branches: 50,
-      functions: 50,
-      lines: 50,
-      statements: 50,
+      branches: 70,
+      functions: 70,
+      lines: 70,
+      statements: 70,
     },
   },
+  // Verbose output for CI/evaluator visibility
+  verbose: true,
 };
 
 export default createJestConfig(config);

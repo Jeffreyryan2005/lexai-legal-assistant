@@ -15,6 +15,7 @@ import { getComparisonPrompt } from "@/lib/prompts";
 import { generateContent, truncateToTokenLimit } from "@/lib/gemini";
 import { validateFileMetadata, parseGeminiJson, createErrorResponse } from "@/lib/validators";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 export const maxDuration = 90;
@@ -129,7 +130,9 @@ ${text2}
       },
     });
   } catch (error) {
-    console.error("[/api/compare] Error:", error);
+    logger.error("[/api/compare] Unhandled error", {
+      message: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json(
       createErrorResponse("Failed to compare documents. Please try again.", 500),
       { status: 500 }

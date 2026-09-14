@@ -16,6 +16,7 @@ import { getAnalysisPrompt } from "@/lib/prompts";
 import { generateContent, truncateToTokenLimit } from "@/lib/gemini";
 import { validateFileMetadata, parseGeminiJson, createErrorResponse } from "@/lib/validators";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -115,7 +116,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       },
     });
   } catch (error) {
-    console.error("[/api/analyze] Error:", error);
+    logger.error("[/api/analyze] Unhandled error", {
+      message: error instanceof Error ? error.message : String(error),
+    });
 
     const message =
       error instanceof Error ? error.message : "An unexpected error occurred";

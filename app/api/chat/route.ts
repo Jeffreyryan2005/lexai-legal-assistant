@@ -15,6 +15,7 @@ import { getChatSystemPrompt } from "@/lib/prompts";
 import { generateChatStream, truncateToTokenLimit } from "@/lib/gemini";
 import { ChatMessageSchema, createErrorResponse } from "@/lib/validators";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -107,7 +108,9 @@ export async function POST(request: NextRequest): Promise<NextResponse | Respons
       },
     });
   } catch (error) {
-    console.error("[/api/chat] Error:", error);
+    logger.error("[/api/chat] Unhandled error", {
+      message: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json(
       createErrorResponse("Chat service temporarily unavailable.", 500),
       { status: 500 }

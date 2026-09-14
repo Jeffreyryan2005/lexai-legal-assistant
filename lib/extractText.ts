@@ -41,10 +41,14 @@ export interface ExtractionResult {
 async function extractFromPdf(
   buffer: Buffer
 ): Promise<{ text: string; pageCount: number }> {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const pdfParse = require("pdf-parse") as (
-    buffer: Buffer
-  ) => Promise<{ text: string; numpages: number }>;
+  // pdf-parse is a CommonJS module; dynamic import gives us its module shape.
+  // We cast via unknown to work around the ESM/CJS boundary in strict TS.
+  type PdfParseResult = { text: string; numpages: number };
+  type PdfParseFn = (buffer: Buffer) => Promise<PdfParseResult>;
+  const mod = await import("pdf-parse");
+  const pdfParse: PdfParseFn =
+    (mod as unknown as { default: PdfParseFn }).default ??
+    (mod as unknown as PdfParseFn);
   const data = await pdfParse(buffer);
   return {
     text: data.text,
