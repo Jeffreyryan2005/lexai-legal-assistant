@@ -118,6 +118,51 @@ export function validateFileMetadata(
 }
 
 /**
+ * Magic byte signatures for supported file types.
+ * Validates actual file content, not just the reported MIME type.
+ * Prevents MIME-type spoofing attacks.
+ */
+const MAGIC_BYTES: Record<string, number[][]> = {
+  pdf:  [[0x25, 0x50, 0x44, 0x46]],             // %PDF
+  docx: [[0x50, 0x4b, 0x03, 0x04],              // PK (ZIP format)
+         [0x50, 0x4b, 0x05, 0x06]],
+  txt:  [],                                       // No magic bytes — UTF-8 decodable
+  md:   [],
+};
+
+/**
+ * Validates file content via magic byte inspection.
+ * Prevents attackers from disguising malicious files as legal documents.
+ *
+ * @param buffer - File contents as Buffer (at least first 8 bytes needed)
+ * @param extension - Reported file extension (lowercase, no leading dot)
+ * @returns true if the content matches the expected file type signature
+ */
+export function validateMagicBytes(buffer: Buffer, extension: string): boolean {
+  const signatures = MAGIC_BYTES[extension];
+  if (!signatures || signatures.length === 0) return true; // txt/md — no magic bytes
+  return signatures.some((sig) => sig.every((byte, i) => buffer[i] === byte));
+}
+
+/**
+ * Sanitizes a filename to prevent path traversal attacks.
+ * Strips directory separators, null bytes, and shell-dangerous characters.
+ * Only the basename is kept — prevents ../../etc/passwd style attacks.
+ *
+ * @param fileName - Raw filename from user upload
+ * @returns Safe basename-only filename
+ */
+export function sanitizeFileName(fileName: string): string {
+  const basename =
+    fileName.replace(/\\/g, "/").split("/").pop() ?? "document";
+  return basename
+    .replace(/[\x00-\x1f\x7f]/g, "")  // Strip control characters
+    .replace(/[<>:"/|?*]/g, "_")       // Replace shell-dangerous characters
+    .trim()
+    .slice(0, 255);
+}
+
+/**
  * Validates and parses JSON response from Gemini.
  * Handles cases where the model wraps JSON in markdown code blocks.
  *

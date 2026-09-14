@@ -6,7 +6,7 @@
  * red flags, action items, and questions for a lawyer.
  */
 
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import {
   FileText,
   AlertTriangle,
@@ -290,3 +290,6 @@ export function AnalysisPanel({
     </div>
   );
 }
+
+// Memoized — re-renders only when analysis data changes, not on parent state changes
+export default memo(AnalysisPanel);

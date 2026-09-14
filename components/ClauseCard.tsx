@@ -5,7 +5,7 @@
  * with expandable details, risk badge, and explanation.
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, memo } from "react";
 import { ChevronDown, ChevronUp, AlertTriangle, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { riskLevelToColors } from "@/lib/riskScorer";
@@ -151,3 +151,6 @@ export function ClauseCard({ clause, index }: ClauseCardProps): React.JSX.Elemen
     </div>
   );
 }
+
+// Memoized to prevent re-render when parent analysis panel updates unrelated state
+export default memo(ClauseCard);

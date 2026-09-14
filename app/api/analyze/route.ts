@@ -14,7 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { extractTextFromFile, isSupportedFileType } from "@/lib/extractText";
 import { getAnalysisPrompt } from "@/lib/prompts";
 import { generateContent, truncateToTokenLimit } from "@/lib/gemini";
-import { validateFileMetadata, parseGeminiJson, createErrorResponse } from "@/lib/validators";
+import { validateFileMetadata, parseGeminiJson, createErrorResponse, validateMagicBytes, sanitizeFileName } from "@/lib/validators";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { logger } from "@/lib/logger";
 
@@ -76,7 +76,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // 5. Extract text from file
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    const extraction = await extractTextFromFile(buffer, file.type, file.name);
+
+    // 5a. Sanitize filename — prevent path traversal
+    const safeFileName = sanitizeFileName(file.name);
+
+    // 5b. Validate magic bytes — prevent MIME spoofing
+    const ext = safeFileName.split(".").pop()?.toLowerCase() ?? "";
+    if (!validateMagicBytes(buffer, ext)) {
+      return NextResponse.json(
+        createErrorResponse(
+          "File content does not match its extension. The file may be corrupted or disguised."
+        ),
+        { status: 415 }
+      );
+    }
+
+    const extraction = await extractTextFromFile(buffer, file.type, safeFileName);
 
     if (!extraction.text || extraction.text.trim().length < 50) {
       return NextResponse.json(
@@ -104,17 +119,25 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // 9. Return structured response with metadata
-    return NextResponse.json({
-      success: true,
-      analysis,
-      metadata: {
-        fileName: file.name,
-        fileSize: file.size,
-        wordCount: extraction.wordCount,
-        pageCount: extraction.pageCount,
-        processingTime: new Date().toISOString(),
+    return NextResponse.json(
+      {
+        success: true,
+        analysis,
+        metadata: {
+          fileName: safeFileName,
+          fileSize: file.size,
+          wordCount: extraction.wordCount,
+          pageCount: extraction.pageCount,
+          processingTime: new Date().toISOString(),
+        },
       },
-    });
+      {
+        headers: {
+          "Cache-Control": "no-store, must-revalidate",
+          "X-Content-Type-Options": "nosniff",
+        },
+      }
+    );
   } catch (error) {
     logger.error("[/api/analyze] Unhandled error", {
       message: error instanceof Error ? error.message : String(error),

@@ -5,7 +5,7 @@
  * between two documents with risk comparison and negotiation tips.
  */
 
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import {
   ArrowLeftRight,
   TrendingUp,
@@ -328,3 +328,6 @@ export function CompareView({
     </div>
   );
 }
+
+// Memoized — large comparison component only re-renders when comparison data changes
+export default memo(CompareView);

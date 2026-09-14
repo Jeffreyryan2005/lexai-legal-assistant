@@ -5,7 +5,7 @@
  * with an animated gauge, color coding, and ARIA accessibility.
  */
 
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import { ShieldCheck, ShieldAlert, ShieldX, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { scoreToRisk, type RiskScore } from "@/lib/riskScorer";
@@ -133,3 +133,6 @@ export function RiskMeter({
     </div>
   );
 }
+
+// Pure component — only re-renders when score, compact, or reason props change
+export default memo(RiskMeter);
