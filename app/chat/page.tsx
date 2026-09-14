@@ -5,9 +5,23 @@
  */
 
 import { useState, useCallback } from "react";
-import { MessageSquare, FileText } from "lucide-react";
-import { ChatInterface } from "@/components/ChatInterface";
+import dynamic from "next/dynamic";
+import { FileText, Loader2 } from "lucide-react";
 import { DocumentUploader, type UploadedFile } from "@/components/DocumentUploader";
+
+// Dynamic code-splitting for ChatInterface (separates react-markdown bundle)
+const ChatInterface = dynamic(
+  () => import("@/components/ChatInterface"),
+  {
+    loading: () => (
+      <div className="flex flex-col items-center justify-center py-16 space-y-4" role="status" aria-label="Loading chat">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+        <p className="text-slate-600 text-sm font-medium">Initializing legal AI chat interface...</p>
+      </div>
+    ),
+    ssr: true,
+  }
+);
 
 /**
  * Chat page — ask legal questions with optional document grounding.

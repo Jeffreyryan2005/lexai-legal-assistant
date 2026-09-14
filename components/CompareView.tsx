@@ -9,9 +9,7 @@ import { useMemo, memo } from "react";
 import {
   ArrowLeftRight,
   TrendingUp,
-  TrendingDown,
   Minus,
-  AlertTriangle,
   Scale,
   MessageSquare,
   HelpCircle,

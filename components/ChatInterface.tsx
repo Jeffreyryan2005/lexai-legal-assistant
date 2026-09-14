@@ -10,6 +10,7 @@ import {
   useRef,
   useCallback,
   useEffect,
+  memo,
   type FormEvent,
   type KeyboardEvent,
 } from "react";
@@ -103,7 +104,7 @@ function ChatMessage({ turn, index }: { turn: ChatTurn; index: number }): React.
  * Streaming chat interface component.
  * Sends messages to /api/chat and streams responses via SSE.
  */
-export function ChatInterface({
+function ChatInterfaceComponent({
   documentContext,
   documentName,
 }: ChatInterfaceProps): React.JSX.Element {
@@ -383,10 +384,14 @@ export function ChatInterface({
             )}
           </button>
         </div>
-        <p id="chat-hint" className="mt-1.5 text-xs text-slate-400">
+        <p id="chat-hint" className="mt-1.5 text-xs text-slate-500">
           Press Enter to send, Shift+Enter for new line
         </p>
       </form>
     </div>
   );
 }
+
+// Memoized chat interface component
+export const ChatInterface = memo(ChatInterfaceComponent);
+export default ChatInterface;

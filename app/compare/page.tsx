@@ -6,10 +6,25 @@
  */
 
 import { useState, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { ArrowLeftRight, Loader2, AlertCircle, RotateCcw } from "lucide-react";
 import { DocumentUploader, type UploadedFile } from "@/components/DocumentUploader";
-import { CompareView, type ComparisonResult } from "@/components/CompareView";
+import type { ComparisonResult } from "@/components/CompareView";
 import { cn } from "@/lib/utils";
+
+// Dynamic code-splitting for minimal initial bundle size
+const CompareView = dynamic(
+  () => import("@/components/CompareView"),
+  {
+    loading: () => (
+      <div className="flex flex-col items-center justify-center py-16 space-y-4" role="status" aria-label="Loading comparison">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+        <p className="text-slate-600 text-sm font-medium">Preparing contract comparison...</p>
+      </div>
+    ),
+    ssr: true,
+  }
+);
 
 type PageState = "idle" | "loading" | "success" | "error";
 
@@ -173,7 +188,7 @@ export default function ComparePage(): React.JSX.Element {
         )}
 
         {!file1 && !file2 && (
-          <p className="text-center text-slate-400 text-sm">
+          <p className="text-center text-slate-500 text-sm">
             Upload both documents above to begin comparison
           </p>
         )}

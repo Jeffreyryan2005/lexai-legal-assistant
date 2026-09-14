@@ -53,6 +53,12 @@ export function checkRateLimit(ip: string): {
   const existing = rateLimitStore.get(ip);
 
   if (!existing || existing.resetAt <= now) {
+    // Prevent memory exhaustion if store exceeds max capacity
+    if (rateLimitStore.size >= MAX_TRACKED_IPS) {
+      const oldestIp = rateLimitStore.keys().next().value;
+      if (oldestIp) rateLimitStore.delete(oldestIp);
+    }
+
     // New window
     const resetAt = now + WINDOW_MS;
     rateLimitStore.set(ip, { count: 1, resetAt });

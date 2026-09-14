@@ -124,12 +124,12 @@ export default function RootLayout({
                   Lex<span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">AI</span>
                 </span>
               </div>
-              <p className="text-slate-400 text-xs max-w-lg leading-relaxed">
+              <p className="text-slate-500 text-xs max-w-lg leading-relaxed">
                 LexAI provides AI-generated analysis for informational purposes only.
                 This is not legal advice. Always consult a qualified legal professional
                 for advice specific to your situation.
               </p>
-              <p className="text-slate-300 text-xs">
+              <p className="text-slate-500 text-xs font-medium">
                 © {new Date().getFullYear()} LexAI — Built for PromptWars Virtual Hackathon
               </p>
             </div>

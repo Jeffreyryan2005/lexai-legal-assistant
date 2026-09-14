@@ -6,10 +6,25 @@
  */
 
 import { useState, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { FileText, Loader2, AlertCircle, RotateCcw } from "lucide-react";
 import { DocumentUploader, type UploadedFile } from "@/components/DocumentUploader";
-import { AnalysisPanel, type AnalysisResult } from "@/components/AnalysisPanel";
+import type { AnalysisResult } from "@/components/AnalysisPanel";
 import { cn } from "@/lib/utils";
+
+// Dynamic code-splitting for minimal initial bundle size
+const AnalysisPanel = dynamic(
+  () => import("@/components/AnalysisPanel"),
+  {
+    loading: () => (
+      <div className="flex flex-col items-center justify-center py-16 space-y-4" role="status" aria-label="Loading analysis">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+        <p className="text-slate-600 text-sm font-medium">Preparing legal analysis...</p>
+      </div>
+    ),
+    ssr: true,
+  }
+);
 
 type PageState = "idle" | "loading" | "success" | "error";
 

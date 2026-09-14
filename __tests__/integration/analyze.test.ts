@@ -146,7 +146,7 @@ describe("/api/analyze route", () => {
 
     const { POST } = await import("../../app/api/analyze/route");
     const request = createMockRequest(
-      "Valid document content.",
+      "This is a valid legal document with sufficient text length to pass the minimum character count check required for analysis.",
       "doc.txt",
       "text/plain"
     );
